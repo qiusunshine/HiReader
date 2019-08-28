@@ -1,0 +1,163 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-android'
+apply plugin: 'org.greenrobot.greendao'
+
+
+static def releaseTime() {
+    return new Date().format("yy.MMddHH", TimeZone.getTimeZone("GMT+8"))
+}
+
+def getVersionCode() {// 获取版本号
+    def versionFile = file('version.properties')// 读取第一步新建的文件
+    if (versionFile.canRead()) {// 判断文件读取异常
+        Properties versionProps = new Properties()
+        versionProps.load(new FileInputStream(versionFile))
+        def versionCode = versionProps['VERSION_CODE'].toInteger()// 读取文件里面的版本号
+        def runTasks = gradle.startParameter.taskNames
+        if (':app:assembleRelease' in runTasks || ':app:packageRelease' in runTasks) {
+            // 版本号自增之后再写入文件（此处是关键，版本号自增+1）
+            versionProps['VERSION_CODE'] = (++versionCode).toString()
+            versionProps.store(versionFile.newWriter(), null)
+        }
+        return versionCode // 返回自增之后的版本号
+    }
+    else {
+        throw new Exception("Could not find version.properties!")
+    }
+}
+
+def name = "HikerYueDu"
+def version = "1." + releaseTime()
+def versionCodeNew = getVersionCode()
+
+android {
+    compileSdkVersion 28
+    buildToolsVersion '28.0.3'
+
+    defaultConfig {
+        applicationId "com.dyh.monkeybook"
+        minSdkVersion 19
+        targetSdkVersion 28
+        versionCode versionCodeNew
+        versionName version
+        project.ext.set("archivesBaseName", name + "_" + version)
+        multiDexEnabled true
+
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            applicationIdSuffix '.debug'
+            versionNameSuffix 'debug'
+            minifyEnabled false
+        }
+        android.applicationVariants.all { variant ->
+            variant.outputs.all {
+                outputFileName = "${name}_${defaultConfig.versionName}.apk"
+            }
+        }
+    }
+    compileOptions {
+        targetCompatibility 1.8
+        sourceCompatibility 1.8
+    }
+
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13-beta-3'
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation project(':basemvplib')
+
+    api 'androidx.core:core-ktx:1.2.0-alpha02'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+
+    //anko
+    def anko_version = '0.10.8'
+    implementation "org.jetbrains.anko:anko-sdk27:$anko_version"
+    implementation "org.jetbrains.anko:anko-sdk27-listeners:$anko_version"
+
+    //fireBase
+    implementation 'com.google.firebase:firebase-core:17.0.1'
+    implementation 'com.crashlytics.sdk.android:crashlytics:2.10.1'
+
+    //androidX
+    implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.0-beta2'
+    implementation 'androidx.cardview:cardview:1.0.0'
+    implementation 'androidx.media:media:1.1.0-rc01'
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+
+    //google
+    implementation 'com.google.android.material:material:1.1.0-alpha08'
+    implementation 'com.google.code.gson:gson:2.8.5'
+    implementation 'com.google.android:flexbox:1.1.0'
+
+    //J_SOUP
+    implementation 'org.jsoup:jsoup:1.12.1'
+    implementation 'cn.wanghaomiao:JsoupXpath:2.3.2'
+    implementation 'com.jayway.jsonpath:json-path:2.4.0'
+
+    //JS
+    implementation 'com.github.gedoor:rhino-android:1.3'
+
+    //GreenDao
+    implementation 'org.greenrobot:greendao:3.2.2'
+    implementation 'com.github.yuweiguocn:GreenDaoUpgradeHelper:v2.1.0'
+
+    //Glide
+    implementation 'com.github.bumptech.glide:glide:4.9.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.9.0'
+
+    //CircleImageView
+    implementation 'de.hdodenhof:circleimageview:3.0.0'
+
+    //bind view
+    implementation 'com.jakewharton:butterknife:10.1.0'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:10.1.0'
+
+    //webServer
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
+    implementation 'org.nanohttpd:nanohttpd-websocket:2.3.1'
+
+    //二维码
+    implementation 'cn.bingoogolapple:bga-qrcode-zxing:1.3.6'
+
+    //颜色选择
+    implementation 'com.jaredrummler:colorpicker:1.1.0'
+
+    //简繁转换
+    implementation 'com.luhuiguo:chinese-utils:1.0'
+
+    //字符串比较
+    implementation 'net.ricecode:string-similarity:1.0.0'
+
+    //MarkDown
+    implementation 'ru.noties.markwon:core:3.0.2'
+
+    //epub
+    implementation('nl.siegmann.epublib:epublib-core:3.1') {
+        exclude group: 'org.slf4j'
+        exclude group: 'xmlpull'
+    }
+
+}
+
+greendao {
+    schemaVersion 64
+    daoPackage 'com.kunfei.bookshelf.dao'
+    targetGenDir 'src/main/java'
+}
+
+
+repositories {
+    mavenCentral()
+}
